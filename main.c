@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
- 
+#include <limits.h>
+
 int compares = 0, swaps = 0;
 
 union 
@@ -18,14 +19,23 @@ void swap(int *a, int *b)
   swaps++;
 }
 
-int cmp(int a, int b) // comparation #4 |a| <= |b|
+int cmp(int a, int b) // comparation #4 |a| > |b|
 {
-  return (abs(a) <= abs(b));
+  compares++;
+  if ((a == INT_MIN) && (b == INT_MIN))
+    return 0;
+  
+  if (a == INT_MIN)
+    return 1;
+  
+  if (b == INT_MIN)
+    return 0;
+  
+  return (abs(a) > abs(b));
 }
 
 int rand_int(void)
 {
-  
   for (int i = 0; i < sizeof u.uc; i++)
     u.uc[i] = rand();
   
@@ -37,14 +47,14 @@ void gen_arr(int *a, int n, int arg)
   if (arg == 1) //sorted
   {
     for (int i = 0; i < n; i++)
-      a[i] = n - i;
+      a[i] = i;
     return;
   }
   
-  if (arg == 2)//reversed sorted
+  if (arg == 2) //reversed sorted
   {
     for (int i = 0; i < n; i++)
-      a[i] = i;
+      a[i] = n - i;
       return;
   }
   
@@ -60,8 +70,7 @@ void bubbleSort(int *arr, int n)
     swapped = 0; 
     for (int j = 0; j < n - i - 1; j++) 
     { 
-      compares++;
-      if (cmp(arr[j], arr[j+1]) == 0) // |arr[j]| > |arr[j+1]| 
+      if (cmp(arr[j], arr[j+1])) // |arr[j]| > |arr[j+1]| 
       {
         swap(&arr[j], &arr[j+1]); 
         swapped = 1; 
@@ -74,32 +83,45 @@ void bubbleSort(int *arr, int n)
   } 
 } 
 
-void sort4(int *arr, int left, int right) //qsort
+void quick_sort(int *arr, int left, int right) //qsort
 {
   int i = left, j = right;
   int pivot = arr[(left + right)/2];
 
   while (i <= j)
   {
-    while (arr[i] < pivot) i++;
-      while (arr[j] > pivot) j--;
-        if (i <= j)
-        {
-          compares++;
-          if (arr[i] > arr[j])
-            swap(&arr[i], &arr[j]);
-    
-          i++;
-          j--;
-        }
+    while ((arr[i] != pivot) && !cmp(arr[i], pivot))
+      i++;
+    while ((arr[j] != pivot) && cmp(arr[j], pivot))
+      j--;
+    if (i <= j)
+    {
+      if (cmp(arr[i], arr[j]))
+        swap(&arr[i], &arr[j]);
+
+      i++;
+      j--;
+    }
   }
 
   if (left < j)
-    sort4(arr, left, j);
+    quick_sort(arr, left, j);
   if (i < right)
-    sort4(arr, i, right);
+    quick_sort(arr, i, right);
 }
- 
+
+void check(int *a, int n) // check if sorted correctly
+{
+  for (int i = 0; i < n - 1; i++)
+    if (cmp(a[i], a[i + 1]))
+    {
+      printf("sorted incorrectly\n");
+      return;
+    }
+  printf("sorted correctly\n");
+}
+
+
 int main(void)
 {
   srand(time(NULL));
@@ -117,10 +139,9 @@ int main(void)
   }
   // printf("\n");
   
-  // printf("%d %d %d", cmp(1, 0), cmp(-2, 3), cmp(3, -3));
-  
   bubbleSort(a, n);
-  printf("%d %d\n", compares, swaps); // bubbleSort results
+  printf("\n%d %d\n", compares, swaps); // bubbleSort results
+  check(a, n);
   
   // for (int i = 0; i < n; i++)
   // {
@@ -132,14 +153,18 @@ int main(void)
   compares = 0;
   swaps = 0;
   
-  sort4(b, 0, n);
-  printf("%d %d\n", compares, swaps); //  sort4 results
+  quick_sort(b, 0, n - 1);
+  printf("%d %d\n", compares, swaps); //  quick_sort results
+  check(b, n);
   
   // for (int i = 0; i < n; i++)
   // {
-  //   printf("%d ", a[i]);
+  //   printf("%d ", b[i]);
   // }
   // printf("\n");
+  
+  free(a);
+  free(b);
   
   return 0;
 }
